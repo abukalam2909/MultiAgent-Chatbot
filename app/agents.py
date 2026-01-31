@@ -15,8 +15,8 @@ from app.ingest import get_vectorstore
 
 
 class Route(BaseModel):
-    destination: Literal["sql", "policy", "both"] = Field(
-        description="Route to SQL, policy docs, or both"
+    destination: Literal["sql", "policy", "both", "smalltalk"] = Field(
+        description="Route to SQL, policy docs, both, or smalltalk"
     )
 
 
@@ -25,6 +25,7 @@ class AgentState(TypedDict):
     route: Optional[str]
     sql_result: Optional[str]
     policy_result: Optional[str]
+    smalltalk_result: Optional[str]
     final: Optional[str]
 
 
@@ -35,7 +36,8 @@ class Agents:
     def router(self, state: AgentState) -> AgentState:
         prompt = (
             "You are a router. Decide whether the user question needs structured "
-            "customer data (SQL), policy docs (policy), or both.\n"
+            "customer data (sql), policy docs (policy), both, or is small talk/general "
+            "greeting that should not query any data (smalltalk).\n"
             f"Question: {state['question']}"
         )
         route = self.llm.with_structured_output(Route).invoke(prompt)
@@ -91,8 +93,20 @@ class Agents:
         state["policy_result"] = answer.content
         return state
 
+    def smalltalk_agent(self, state: AgentState) -> AgentState:
+        answer = self.llm.invoke(
+            "Do not answer the prompt"
+            "Do not mention databases or policies. "
+            "Inform the user to please ask questions about policies or customers only.\n"
+            f"User: {state['question']}"
+        )
+        state["smalltalk_result"] = answer.content
+        return state
+
     def final_response(self, state: AgentState) -> AgentState:
         parts = []
+        if state.get("route") == "smalltalk" and state.get("smalltalk_result"):
+            parts.append(state["smalltalk_result"])
         if state.get("route") in {"policy", "both"} and state.get("policy_result"):
             parts.append("Policy Docs Summary:\n" + state["policy_result"])
         if state.get("route") in {"sql", "both"} and state.get("sql_result"):
@@ -111,6 +125,7 @@ def build_graph():
     graph.add_node("router", agents.router)
     graph.add_node("sql_agent", agents.sql_agent)
     graph.add_node("policy_agent", agents.policy_agent)
+    graph.add_node("smalltalk_agent", agents.smalltalk_agent)
     graph.add_node("final", agents.final_response)
 
     def route_decision(state: AgentState) -> str:
@@ -124,6 +139,7 @@ def build_graph():
             "sql": "sql_agent",
             "policy": "policy_agent",
             "both": "sql_agent",
+            "smalltalk": "smalltalk_agent",
         },
     )
     def route_policy_after_sql(state: AgentState) -> str:
@@ -134,6 +150,7 @@ def build_graph():
         route_policy_after_sql,
         {"policy_agent": "policy_agent", "final": "final"},
     )
+    graph.add_edge("smalltalk_agent", "final")
     graph.add_edge("policy_agent", "final")
     graph.add_edge("final", END)
 
