@@ -36,9 +36,8 @@ st.divider()
 
 st.subheader("Example questions")
 examples = [
-    "What is the return policy?",
-    "Give me a quick overview of customer Ema's profile and past ticket details.",
-    "Do we allow refunds after 30 days and does customer Rajesh have open tickets?",
+    "What is the code of ethics for employees?",
+    "Give me a quick overview of customer Abu's profile and past ticket details.",
 ]
 for ex in examples:
     st.write(f"- {ex}")
