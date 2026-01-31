@@ -10,7 +10,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.agents import build_graph
-from app.ingest import ingest_policies
+from app.config import get_settings
+from app.ingest import ingest_policies, ingest_uploaded
 
 load_dotenv()
 
@@ -23,7 +24,22 @@ with st.sidebar:
     if st.button("Ingest policy PDFs"):
         count = ingest_policies()
         st.success(f"Ingested {count} chunks into Chroma.")
-    st.caption("Make sure OPENAI_API_KEY and MySQL settings are set in .env")
+    st.subheader("Upload policy PDFs")
+    uploads = st.file_uploader(
+        "Add policy PDFs",
+        type=["pdf"],
+        accept_multiple_files=True,
+    )
+    if uploads and st.button("Ingest uploaded PDFs"):
+        saved_paths = []
+        policy_dir = Path(get_settings().policy_dir)
+        policy_dir.mkdir(parents=True, exist_ok=True)
+        for uploaded in uploads:
+            target = policy_dir / uploaded.name
+            target.write_bytes(uploaded.read())
+            saved_paths.append(target)
+        count = ingest_uploaded(saved_paths)
+        st.success(f"Ingested {count} chunks from uploaded PDFs.")
 
 question = st.text_input("Ask a question about customers or policy documents")
 
