@@ -1,0 +1,13 @@
+streamlit
+python-dotenv
+langchain
+langchain-openai
+langchain-community
+langchain-text-splitters
+langgraph
+chromadb
+pypdf
+mysql-connector-python
+sqlalchemy
+mcp
+pydantic
