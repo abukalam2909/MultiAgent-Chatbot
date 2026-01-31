@@ -2,6 +2,9 @@
 
 Generative AI–powered multi‑agent system that lets support teams query structured customer data and search policy PDFs using natural language.
 
+## Demo Video
+Watch the demo here: https://youtu.be/Ur58DUvFUoc
+
 ## Features
 - Natural‑language queries over MySQL customer + ticket data
 - Policy PDF ingestion into Chroma (vector store) for semantic search
@@ -130,6 +133,4 @@ Tools exposed:
 - **OpenAI quota error (429)**  
   Ensure your API key has active billing and quota.
 
-## Demo Video
-/URL to be added/
 
