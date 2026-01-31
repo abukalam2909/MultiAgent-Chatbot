@@ -19,13 +19,7 @@ def _load_sources(policy_dir: Path) -> dict:
     return {}
 
 
-def ingest_policies() -> int:
-    settings = get_settings()
-    policy_dir = Path(settings.policy_dir)
-    policy_dir.mkdir(parents=True, exist_ok=True)
-
-    sources = _load_sources(policy_dir)
-    pdfs = sorted(policy_dir.glob("*.pdf"))
+def _ingest_pdfs(pdfs: List[Path], policy_dir: Path, sources: dict) -> int:
     if not pdfs:
         return 0
 
@@ -45,9 +39,27 @@ def ingest_policies() -> int:
     Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
-        persist_directory=settings.chroma_dir,
+        persist_directory=get_settings().chroma_dir,
     )
     return len(chunks)
+
+
+def ingest_policies() -> int:
+    settings = get_settings()
+    policy_dir = Path(settings.policy_dir)
+    policy_dir.mkdir(parents=True, exist_ok=True)
+
+    sources = _load_sources(policy_dir)
+    pdfs = sorted(policy_dir.glob("*.pdf"))
+    return _ingest_pdfs(pdfs, policy_dir, sources)
+
+
+def ingest_uploaded(pdfs: List[Path]) -> int:
+    settings = get_settings()
+    policy_dir = Path(settings.policy_dir)
+    policy_dir.mkdir(parents=True, exist_ok=True)
+    sources = _load_sources(policy_dir)
+    return _ingest_pdfs(pdfs, policy_dir, sources)
 
 
 def get_vectorstore() -> Chroma:
